@@ -10,12 +10,22 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Repositories\UserRepositoryInterface;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+
 use Illuminate\Support\Facades\Log;
+
 
 
 
 class UserController extends Controller
 {
+    protected $userRepository;
+
+    public function __construct(UserRepositoryInterface $userRepository)
+    {
+        $this->userRepository = $userRepository;
+    }
     /**
      * Summary of createUser
      * @param \Illuminate\Http\Request $request
@@ -122,17 +132,13 @@ class UserController extends Controller
         $roles = $validated['roles'] ?? [];
         unset($validated['roles']);
 
-        // Update user
-        $updated = $user->update($validated);
-        if (!$updated) {
-            return response()->json(['message' => 'Update failed'], 400);
-        }
+        // Update user attributes
+        $updatedUser = $this->userRepository->updateUser($user, $validated);
 
-        // Update roles if provided
-        $user->roles()->sync($roles);
+        $updatedUser = $this->userRepository->updateUserRoles($user, $roles);
 
         return response()->json([
-            'data' => $user->load('roles'),
+            'data' => $updatedUser,
             'message' => 'User updated successfully'
         ]);
     }
@@ -157,11 +163,11 @@ class UserController extends Controller
         $imageUrl = Storage::url($path);
 
         // Update the user's image path
-        $user->update(['image_path' => $imageUrl]);
+        $updatedUser = $this->userRepository->updateUserImage($user, $imageUrl);
 
         return response()->json([
             'message' => 'Image uploaded successfully',
-            'image_path' => $imageUrl
+            'data' => $updatedUser
         ]);
     }
 
@@ -176,9 +182,8 @@ class UserController extends Controller
         $result = array('status' => true, 'message' => "User has been deleted successfully");
         return response()->json($result, 200);
     }
-    public function login(Request $request)
-    {
-        // Validate the request data
+   
+    public function login(Request $request): JsonResponse{
         $validator = Validator::make($request->all(), [
             'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:8',
@@ -196,7 +201,9 @@ class UserController extends Controller
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
 
-            // If you are using session-based authentication, the session will automatically be set
+            // Generate the token
+            $token = JWTAuth::fromUser($user);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
@@ -204,7 +211,8 @@ class UserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email
-                ]
+                ],
+                'token' => $token
             ], 200);
         } else {
             return response()->json([
@@ -214,18 +222,26 @@ class UserController extends Controller
         }
     }
 
-    public function unauthenticate()
-    {
-        return response()->json(['status' => false, 'message' => "Only authorised user can access", "error" => "unauthenticate"], 401);
+      #function to logout user
+    public function logout(): JsonResponse {
+        Auth::guard('api')->logout();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully logged out'
+        ]);
     }
-    #function to logout user
-    public function logout()
-    {
-        $user = Auth::user();
-        /*$user->tokens->each(function ($token, $key) {
-        $token->delete();
-        });*/
-        return response()->json(['status' => true, 'message' => 'Logged out successfully', 'data' => $user], 200);
+
+    public function getUserByRoleId($roleId): JsonResponse {
+        $users = User::whereHas('roles', function ($query) use ($roleId) {
+            $query->where('roles.id', $roleId);
+        })->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Users retrieved successfully',
+            'data' => $users
+        ]);
     }
 }
 

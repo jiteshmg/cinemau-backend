@@ -5,28 +5,33 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\MovieController;
 use App\Http\Controllers\Api\UserRoleController;
+use App\Http\Controllers\Api\MovieInvitationController;
 
 
-Route::post('login',[UserController::class,'login']);
-Route::post('register',[UserController::class,'createUser']);
-Route::put('user-update/{id}', [UserController::class, 'updateUser']);
-Route::post('update-profile-image/{id}', [UserController::class, 'updateImage']);
-
-// Route::put('user-update/{id}', function ($id) {
-//     return response()->json(['message' => 'Route hit', 'id' => $id]);
-// });
-
-
-// Route::delete('delete-user/{id}',[UserController::class,'deleteUser']);
+Route::post('login', [UserController::class, 'login']);
+Route::post('register', [UserController::class, 'createUser']);
 
 
 
-// Route::get('unauthenticate',[UserController::class,'unauthenticate'])->name('unauthenticate');
+// Protected Routes (Require JWT Token)
+Route::middleware(['auth:api'])->group(function () {
+    Route::put('user-update/{id}', [UserController::class, 'updateUser']);
+    Route::get('get-user/{id}', [UserController::class, 'getUserDetail']);
+    Route::post('update-profile-image/{id}', [UserController::class, 'updateImage']);
+    Route::get('user-role', [UserRoleController::class, 'getUserRoles']);
+    Route::get('user-role/{id}', [UserController::class, 'getUserByRoleId']);
 
-// Route::get('get-user',[UserController::class,'getUsers']);
-Route::get('get-user/{id}',[UserController::class,'getUserDetail']);
-// Route::post('logout',[UserController::class,'logout']);
+    Route::get('role', [RoleController::class, 'getRoles']);
+    
+    Route::get('movies', [MovieController::class, 'getMovies']);
+    Route::get('movie-user/{id}', [MovieController::class, 'getMoviesByUserId']);
+    Route::post('join-movie', [MovieController::class, 'joinMovie']);
 
-Route::get('role',[RoleController::class,'getRoles']);
-Route::get('user-role',[UserRoleController::class,'getUserRoles']);
+    Route::post('invite-movie', [MovieInvitationController::class, 'sendInvitation']);
+});
+
+
+
+

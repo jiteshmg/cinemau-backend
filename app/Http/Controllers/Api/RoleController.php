@@ -4,14 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use Exception;
 use App\Models\Role;
-use Illuminate\Http\Request;
+use App\Traits\JsonResponseTrait;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 
 class RoleController extends Controller
 {
+    use JsonResponseTrait;
     /**
      * Summary of getRoles
      * @return \Illuminate\Http\JsonResponse
@@ -19,12 +18,9 @@ class RoleController extends Controller
     public function getRoles():JsonResponse {
         $roles = Role::all();
         try{
-            $result = array('status' => true, 'message' => count($roles). " role(s) fetched", "data" => $roles);
-            return response()->json($result, 200);
+            return $this->successResponse($roles, 'Roles retrieved successfully');
         }catch(Exception $e) {
-            $result = array('status' => false, 'message' => "API failed due to an error",
-            "error" => $e->getMessage());
-            return response()->json($result, 500);
+            return $this->errorResponse($e->getMessage(), 500);
         }
     }
 }

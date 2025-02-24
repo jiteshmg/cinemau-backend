@@ -28,14 +28,15 @@ trait JsonResponseTrait
      *
      * @param string $message
      * @param int $status
+     * @param mixed $data
      * @return JsonResponse
      */
-    protected function errorResponse($message = 'Error', $status = 400): JsonResponse
+    protected function errorResponse($message = 'Error', $status = 400, $data = null): JsonResponse
     {
         return response()->json([
             'status' => 'error',
             'message' => $message,
-            'data' => null
+            'data' => $data
         ], $status);
     }
 }

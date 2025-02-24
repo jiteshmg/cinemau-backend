@@ -30,17 +30,31 @@ class Movie extends Model
         'status',
         'expected_start_date'
     ];
+
+    protected $dates = [
+        'release_date',
+        'expected_start_date',
+    ];
+
+    protected $casts = [
+        'created_by' => 'integer',
+        'rating' => 'decimal:1',
+        'budget' => 'decimal:2',
+        'box_office' => 'decimal:2',
+    ];
     public function movieCrew()
     {
         return $this->hasMany(MovieCrew::class, 'movie_id');
     }
 
-    public static function getMoviesByUserId($userId)
-    {
-        return self::whereHas('movieCrew', function ($query) use ($userId) {
-            $query->where('user_id', $userId);
+    public static function getMoviesByUserId($userId){
+        return self::where(function ($query) use ($userId) {
+            $query->where('created_by', $userId)
+                ->orWhereHas('movieCrew', function ($subquery) use ($userId) {
+                    $subquery->where('user_id', $userId);
+                });
         })
-        ->with(['movieCrew.user:id,name','movieCrew.role:id,name']) // Eager load user's name
+        ->with(['movieCrew.user:id,name', 'movieCrew.role:id,name'])
         ->get();
     }
 

@@ -14,21 +14,22 @@ Route::post('login', [UserController::class, 'login']);
 Route::post('register', [UserController::class, 'createUser']);
 
 
-
+Route::get('user-role/{id}', [UserController::class, 'getUserRolesByUserId']);
 // Protected Routes (Require JWT Token)
 Route::middleware(['auth:api'])->group(function () {
     Route::put('user-update/{id}', [UserController::class, 'updateUser']);
     Route::get('get-user/{id}', [UserController::class, 'getUserDetail']);
     Route::post('update-profile-image/{id}', [UserController::class, 'updateImage']);
     Route::get('user-role', [UserRoleController::class, 'getUserRoles']);
-    Route::get('user-role/{id}', [UserController::class, 'getUserByRoleId']);
+    Route::get('role-user/{id}', [UserController::class, 'getUserByRoleId']);
 
     Route::get('role', [RoleController::class, 'getRoles']);
     
     Route::get('movies', [MovieController::class, 'getMovies']);
-    Route::get('movie-user/{id}', [MovieController::class, 'getMoviesByUserId']);
+    
     Route::post('join-movie', [MovieController::class, 'joinMovie']);
-
+    Route::post('create-movie', [MovieController::class, 'createMovie']);
+    Route::get('movie-user/{id}', [MovieController::class, 'getMoviesByUserId']);
     Route::post('invite-movie', [MovieInvitationController::class, 'sendInvitation']);
 });
 
